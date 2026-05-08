@@ -7,6 +7,7 @@
 <meta name="description" content="The only AI-powered real estate platform built for Indian Americans. Manage US and India investments in one place with NRI-specific tax and legal guidance.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
@@ -921,14 +922,38 @@ const observer = new IntersectionObserver((entries) => {
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
 // Waitlist
-function handleSignup(e) {
+const supabaseUrl = 'https://xghxsmemjxhhqlwntbvj.supabase.co/rest/v1/';
+const supabaseAnonKey = 'sb_secret_zNOKRAbPODDbTeEF8HN-bg_y7g38YNH';
+const normalizedSupabaseUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, '');
+const supabaseClient = window.supabase.createClient(normalizedSupabaseUrl, supabaseAnonKey);
+
+async function handleSignup(e) {
   e.preventDefault();
-  const email = document.getElementById('email-input').value;
+  const emailInput = document.getElementById('email-input');
+  const email = emailInput.value.trim();
   const msg = document.getElementById('signup-msg');
+
+  const { error } = await supabaseClient
+    .from('waitlist')
+    .insert([{ email }]);
+
   msg.style.display = 'block';
-  msg.textContent = "You're on the list! We'll reach out soon.";
-  document.getElementById('email-input').value = '';
-  console.log('Waitlist signup:', email);
+
+  if (!error) {
+    msg.style.color = 'var(--teal)';
+    msg.textContent = "You're on the list! We'll reach out soon.";
+    emailInput.value = '';
+    return;
+  }
+
+  if (error.code === '23505') {
+    msg.style.color = 'var(--teal)';
+    msg.textContent = "Looks like you're already on the list — see you soon.";
+    return;
+  }
+
+  msg.style.color = '#ef4444';
+  msg.textContent = "Something went wrong — try again";
 }
 </script>
 
